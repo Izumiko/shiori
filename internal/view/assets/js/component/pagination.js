@@ -1,4 +1,4 @@
-var template = `
+const template = `
 <div class="pagination-box">
 	<p>Page</p>
 	<input type="text" 
@@ -11,7 +11,7 @@ var template = `
 	<div class="spacer"></div>
 	<template v-if="!editMode">
 		<a v-if="page > 2" title="Go to first page" @click="changePage(1)">
-			<i class="fas fa-fw fa-angle-double-left"></i>
+			<i class="fa-solid fa-fw fa-angles-left"></i>
 		</a>
 		<a v-if="page > 1" title="Go to previous page" @click="changePage(page-1)">
 			<i class="fa fa-fw fa-angle-left"></i>
@@ -20,25 +20,25 @@ var template = `
 			<i class="fa fa-fw fa-angle-right"></i>
 		</a>
 		<a v-if="page < maxPage - 1" title="Go to last page" @click="changePage(maxPage)">
-			<i class="fas fa-fw fa-angle-double-right"></i>
+			<i class="fa-solid fa-fw fa-angles-right"></i>
 		</a>
 	</template>
 </div>`
 
 export default {
-	template: template,
-	props: {
-		page: Number,
-		maxPage: Number,
-		editMode: Boolean,
-	},
-	methods: {
-		changePage(page) {
-			page = parseInt(page, 10) || 0;
-			if (page >= this.maxPage) page = this.maxPage;
-			else if (page <= 1) page = 1;
-
-			this.$emit("change", page);
-		}
-	}
+    template: template,
+    props: {
+        page: Number,
+        maxPage: Number,
+        editMode: Boolean
+    },
+    methods: {
+        changePage(page) {
+            page = parseInt(page, 10) || 1;
+            if (page >= this.maxPage) page = this.maxPage;
+            else if (page < 1) page = 1;
+            this.$emit('change', page);
+        }
+    },
+    emit: ['change']
 }

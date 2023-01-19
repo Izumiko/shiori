@@ -1,4 +1,4 @@
-var template = `
+const template = `
 <div id="page-setting">
     <h1 class="page-header">Settings</h1>
     <div class="setting-container">
@@ -53,10 +53,10 @@ var template = `
                         <span v-if="account.owner" class="account-level">(owner)</span>
                     </p>
                     <a title="Change password" @click="showDialogChangePassword(account)">
-                        <i class="fa fas fa-fw fa-key"></i>
+                        <i class="fa fa-solid fa-fw fa-key"></i>
                     </a>
                     <a title="Delete account" @click="showDialogDeleteAccount(account, idx)">
-                        <i class="fa fas fa-fw fa-trash-alt"></i>
+                        <i class="fa fa-solid fa-fw fa-trash-can"></i>
                     </a>
                 </li>
             </ul>
@@ -66,25 +66,53 @@ var template = `
             </div>
         </details>
     </div>
-    <div class="loading-overlay" v-if="loading"><i class="fas fa-fw fa-spin fa-spinner"></i></div>
+    <div class="loading-overlay" v-if="loading"><i class="fa-solid fa-fw fa-spin fa-spinner"></i></div>
     <custom-dialog v-bind="dialog"/>
 </div>`;
 
-import customDialog from "../component/dialog.js";
-import basePage from "./base.js";
+import customDialog from '../component/dialog.js';
+import { showDialog, getErrorMessage, showErrorDialog } from '../component/base.js';
 
 export default {
-	template: template,
-	mixins: [basePage],
-	components: {
-		customDialog
-	},
-	data() {
-		return {
-			loading: false,
-			accounts: []
-		}
-	},
+    template: template,
+    components: {
+        customDialog
+    },
+    props: {
+        activeAccount: {
+            type: Object,
+            default() {
+                return {
+                    id: 0,
+                    username: "",
+                    owner: false,
+                }
+            }
+        },
+        appOptions: {
+            type: Object,
+            default() {
+                return {
+                    ShowId: false,
+                    ListMode: false,
+                    HideThumbnail: false,
+                    HideExcerpt: false,
+                    NightMode: false,
+                    KeepMetadata: false,
+                    UseArchive: false,
+                    CreateEbook: false,
+                    MakePublic: false,
+                };
+            }
+        }
+    },
+    data() {
+        return {
+            loading: false,
+            accounts: [],
+            dialog: {}
+        }
+    },
     methods: {
         saveSetting() {
             let options = {
@@ -130,218 +158,219 @@ export default {
 
         },
         loadAccounts() {
-			if (this.loading) return;
+            if (this.loading) return;
 
-			this.loading = true;
+            this.loading = true;
 			fetch(new URL("api/accounts", document.baseURI), {
 				headers: {
 					'Content-Type': 'application/json',
 					'Authorization': 'Bearer ' + localStorage.getItem("shiori-token"),
 				}
 			})
-				.then(response => {
-					if (!response.ok) throw response;
-					return response.json();
-				})
-				.then(json => {
-					this.loading = false;
-					this.accounts = json;
-				})
-				.catch(err => {
-					this.loading = false;
-					this.getErrorMessage(err).then(msg => {
-						this.showErrorDialog(msg);
-					})
-				});
-		},
-		showDialogNewAccount() {
-			this.showDialog({
-				title: "New Account",
-				content: "Input new account's data :",
-				fields: [{
-					name: "username",
-					label: "Username",
-					value: "",
-				}, {
-					name: "password",
-					label: "Password",
-					type: "password",
-					value: "",
-				}, {
-					name: "repeat",
-					label: "Repeat password",
-					type: "password",
-					value: "",
-				}, {
-					name: "visitor",
-					label: "This account is for visitor",
-					type: "check",
-					value: false,
-				}],
-				mainText: "OK",
-				secondText: "Cancel",
-				mainClick: (data) => {
-					if (data.username === "") {
-						this.showErrorDialog("Username must not empty");
-						return;
-					}
+                .then(response => {
+                    if (!response.ok) throw response;
+                    return response.json();
+                })
+                .then(json => {
+                    this.loading = false;
+                    this.accounts = json;
+                })
+                .catch(err => {
+                    this.loading = false;
+                    getErrorMessage(err).then(msg => {
+                        showErrorDialog(this, msg);
+                    })
+                });
+        },
+        showDialogNewAccount() {
+            showDialog(this, {
+                title: "New Account",
+                content: "Input new account's data :",
+                fields: [{
+                    name: "username",
+                    label: "Username",
+                    value: "",
+                }, {
+                    name: "password",
+                    label: "Password",
+                    type: "password",
+                    value: "",
+                }, {
+                    name: "repeat",
+                    label: "Repeat password",
+                    type: "password",
+                    value: "",
+                }, {
+                    name: "visitor",
+                    label: "This account is for visitor",
+                    type: "check",
+                    value: false,
+                }],
+                mainText: "OK",
+                secondText: "Cancel",
+                mainClick: (data) => {
+                    if (data.username === "") {
+                        showErrorDialog(this, "Username must not empty");
+                        return;
+                    }
 
-					if (data.password === "") {
-						this.showErrorDialog("Password must not empty");
-						return;
-					}
+                    if (data.password === "") {
+                        showErrorDialog(this, "Password must not empty");
+                        return;
+                    }
 
-					if (data.password !== data.repeat) {
-						this.showErrorDialog("Password does not match");
-						return;
-					}
+                    if (data.password !== data.repeat) {
+                        showErrorDialog(this, "Password does not match");
+                        return;
+                    }
 
-					var request = {
-						username: data.username,
-						password: data.password,
-						owner: !data.visitor,
-					}
+                    var request = {
+                        username: data.username,
+                        password: data.password,
+                        owner: !data.visitor,
+                    }
 
-					this.dialog.loading = true;
-					fetch(new URL("api/accounts", document.baseURI), {
-						method: "post",
-						body: JSON.stringify(request),
-						headers: {
-							"Content-Type": "application/json",
+                    this.dialog.loading = true;
+                    fetch(new URL("api/accounts", document.baseURI), {
+                        method: "post",
+                        body: JSON.stringify(request),
+                        headers: {
+                            "Content-Type": "application/json",
 							'Authorization': 'Bearer ' + localStorage.getItem("shiori-token"),
-						}
-					}).then(response => {
-						if (!response.ok) throw response;
-						return response;
-					}).then(() => {
-						this.dialog.loading = false;
-						this.dialog.visible = false;
+                        }
+                    }).then(response => {
+                        if (!response.ok) throw response;
+                        return response;
+                    }).then(() => {
+                        this.dialog.loading = false;
+                        this.dialog.visible = false;
 
-						this.accounts.push({ username: data.username, owner: !data.visitor });
-						this.accounts.sort((a, b) => {
-							var nameA = a.username.toLowerCase(),
-								nameB = b.username.toLowerCase();
+                        this.accounts.push({ username: data.username, owner: !data.visitor });
+                        this.accounts.sort((a, b) => {
+                            var nameA = a.username.toLowerCase(),
+                                nameB = b.username.toLowerCase();
 
-							if (nameA < nameB) {
-								return -1;
-							}
+                            if (nameA < nameB) {
+                                return -1;
+                            }
 
-							if (nameA > nameB) {
-								return 1;
-							}
+                            if (nameA > nameB) {
+                                return 1;
+                            }
 
-							return 0;
-						});
-					}).catch(err => {
-						this.dialog.loading = false;
-						this.getErrorMessage(err).then(msg => {
-							this.showErrorDialog(msg);
-						})
-					});
-				}
-			});
-		},
-		showDialogChangePassword(account) {
-			this.showDialog({
-				title: "Change Password",
-				content: "Input new password :",
-				fields: [{
-					name: "oldPassword",
-					label: "Old password",
-					type: "password",
-					value: "",
-				}, {
-					name: "password",
-					label: "New password",
-					type: "password",
-					value: "",
-				}, {
-					name: "repeat",
-					label: "Repeat password",
-					type: "password",
-					value: "",
-				}],
-				mainText: "OK",
-				secondText: "Cancel",
-				mainClick: (data) => {
-					if (data.oldPassword === "") {
-						this.showErrorDialog("Old password must not empty");
-						return;
-					}
+                            return 0;
+                        });
+                    }).catch(err => {
+                        this.dialog.loading = false;
+                        getErrorMessage(err).then(msg => {
+                            showErrorDialog(this, msg);
+                        })
+                    });
+                }
+            });
+        },
+        showDialogChangePassword(account) {
+            showDialog(this, {
+                title: "Change Password",
+                content: "Input new password :",
+                fields: [{
+                    name: "oldPassword",
+                    label: "Old password",
+                    type: "password",
+                    value: "",
+                }, {
+                    name: "password",
+                    label: "New password",
+                    type: "password",
+                    value: "",
+                }, {
+                    name: "repeat",
+                    label: "Repeat password",
+                    type: "password",
+                    value: "",
+                }],
+                mainText: "OK",
+                secondText: "Cancel",
+                mainClick: (data) => {
+                    if (data.oldPassword === "") {
+                        showErrorDialog(this, "Old password must not empty");
+                        return;
+                    }
 
-					if (data.password === "") {
-						this.showErrorDialog("New password must not empty");
-						return;
-					}
+                    if (data.password === "") {
+                        showErrorDialog(this, "New password must not empty");
+                        return;
+                    }
 
-					if (data.password !== data.repeat) {
-						this.showErrorDialog("Password does not match");
-						return;
-					}
+                    if (data.password !== data.repeat) {
+                        showErrorDialog(this, "Password does not match");
+                        return;
+                    }
 
-					var request = {
-						username: account.username,
-						oldPassword: data.oldPassword,
-						newPassword: data.password,
-						owner: account.owner,
-					}
+                    var request = {
+                        username: account.username,
+                        oldPassword: data.oldPassword,
+                        newPassword: data.password,
+                        owner: account.owner,
+                    }
 
-					this.dialog.loading = true;
-					fetch(new URL("api/accounts", document.baseURI), {
-						method: "put",
-						body: JSON.stringify(request),
-						headers: {
-							"Content-Type": "application/json",
+                    this.dialog.loading = true;
+                    fetch(new URL("api/accounts", document.baseURI), {
+                        method: "put",
+                        body: JSON.stringify(request),
+                        headers: {
+                            "Content-Type": "application/json",
 							'Authorization': 'Bearer ' + localStorage.getItem("shiori-token"),
-						},
-					}).then(response => {
-						if (!response.ok) throw response;
-						return response;
-					}).then(() => {
-						this.dialog.loading = false;
-						this.dialog.visible = false;
-					}).catch(err => {
-						this.dialog.loading = false;
-						this.getErrorMessage(err).then(msg => {
-							this.showErrorDialog(msg);
-						})
-					});
-				}
-			});
-		},
-		showDialogDeleteAccount(account, idx) {
-			this.showDialog({
-				title: "Delete Account",
-				content: `Delete account "${account.username}" ?`,
-				mainText: "Yes",
-				secondText: "No",
-				mainClick: () => {
-					this.dialog.loading = true;
-					fetch(`/api/accounts`, {
-						method: "delete",
-						body: JSON.stringify([account.username]),
-						headers: {
-							"Content-Type": "application/json",
+                        },
+                    }).then(response => {
+                        if (!response.ok) throw response;
+                        return response;
+                    }).then(() => {
+                        this.dialog.loading = false;
+                        this.dialog.visible = false;
+                    }).catch(err => {
+                        this.dialog.loading = false;
+                        getErrorMessage(err).then(msg => {
+                            showErrorDialog(this, msg);
+                        })
+                    });
+                }
+            });
+        },
+        showDialogDeleteAccount(account, idx) {
+            showDialog(this, {
+                title: "Delete Account",
+                content: `Delete account "${account.username}" ?`,
+                mainText: "Yes",
+                secondText: "No",
+                mainClick: () => {
+                    this.dialog.loading = true;
+                    fetch(`/api/accounts`, {
+                        method: "delete",
+                        body: JSON.stringify([account.username]),
+                        headers: {
+                            "Content-Type": "application/json",
 							'Authorization': 'Bearer ' + localStorage.getItem("shiori-token")
-						},
-					}).then(response => {
-						if (!response.ok) throw response;
-						return response;
-					}).then(() => {
-						this.dialog.loading = false;
-						this.dialog.visible = false;
-						this.accounts.splice(idx, 1);
-					}).catch(err => {
-						this.dialog.loading = false;
-						this.getErrorMessage(err).then(msg => {
-							this.showErrorDialog(msg);
-						})
-					});
-				}
-			});
-		},
-	},
-	mounted() {
-		this.loadAccounts();
-	}
+                        },
+                    }).then(response => {
+                        if (!response.ok) throw response;
+                        return response;
+                    }).then(() => {
+                        this.dialog.loading = false;
+                        this.dialog.visible = false;
+                        this.accounts.splice(idx, 1);
+                    }).catch(err => {
+                        this.dialog.loading = false;
+                        getErrorMessage(err).then(msg => {
+                            showErrorDialog(this, msg);
+                        })
+                    });
+                }
+            });
+        }
+    },
+    mounted() {
+        this.loadAccounts();
+    },
+    emit: ["setting-changed"]
 }

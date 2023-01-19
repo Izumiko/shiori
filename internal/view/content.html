@@ -2,11 +2,11 @@
 <html lang="en">
 
 <head>
-	<base href="$$.RootPath$$">
-	<title>$$.Book.Title$$ - Shiori - Bookmarks Manager</title>
+    <base href="$$.RootPath$$">
+    <title>$$.Book.Title$$ - Shiori - Bookmarks Manager</title>
 
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 	<link rel="apple-touch-icon-precomposed" sizes="152x152" href="assets/res/apple-touch-icon-152x152.png">
 	<link rel="apple-touch-icon-precomposed" sizes="144x144" href="assets/res/apple-touch-icon-144x144.png">
@@ -16,49 +16,47 @@
 
 	<link href="assets/css/style.css" rel="stylesheet">
 
-	<script src="assets/js/dayjs.min.js"></script>
-	<script src="assets/js/vue.min.js"></script>
+    <!-- <script src="assets/js/vue.global.min.js"></script> -->
+    <script src="assets/js/vue.global.prod.min.js"></script>
+    <script src="assets/js/dayjs.min.js"></script>
 </head>
 
 <body class="night">
 	<div id="content-scene" :class="{night: appOptions.NightMode}">
-		<div id="header">
-			<p id="metadata" v-cloak>Added {{localtime()}}</p>
+        <div id="header">
+            <p id="metadata" v-cloak>Added {{localtime()}}</p>
 			<p id="title" dir="auto">$$.Book.Title$$</p>
-			<div id="links">
-				<a href="$$.Book.URL$$" target="_blank" rel="noopener">View Original</a>
-				$$if .Book.HasArchive$$
-				<a href="bookmark/$$.Book.ID$$/archive">View Archive</a>
-				$$end$$
+            <div id="links">
+                <a href="$$.Book.URL$$" target="_blank" rel="noopener">View Original</a>
+                $$if .Book.HasArchive$$
+                <a href="bookmark/$$.Book.ID$$/archive">View Archive</a>
+                $$end$$
 				$$if .Book.HasEbook$$
 				<a href="bookmark/$$.Book.ID$$/ebook" download="$$.Book.Title$$.epub">Download Ebook</a>
 				$$end$$
-			</div>
-		</div>
+            </div>
+        </div>
 		<div id="content" dir="auto" v-pre>
-			$$html .Book.HTML$$
-		</div>
-	</div>
+            $$html .Book.HTML$$
+        </div>
+    </div>
 
-	<script type="module">
-		// Create initial variable
-		import basePage from "./assets/js/page/base.js";
-
-		new Vue({
-			el: '#content-scene',
-			mixins: [basePage],
-			data: {
-				modified: "$$.Book.Modified$$"
-			},
-			methods: {
-				localtime() {
-					var strTime = this.modified.replace(" ", "T");
-					if (!strTime.endsWith("Z")) {
-						strTime += "Z";
-					}
-					return dayjs(strTime).format("D MMMM YYYY, HH:mm:ss");
-				},
-				loadSetting() {
+    <script type="module">
+        const app = Vue.createApp({
+            data() {
+                return {
+                    modified: "$$.Book.Modified$$"
+                }
+            },
+            methods: {
+                localtime() {
+                    var strTime = this.modified.replace(" ", "T");
+                    if (!strTime.endsWith("Z")) {
+                        strTime += "Z";
+                    }
+                    return dayjs(strTime).format("D MMMM YYYY, HH:mm:ss");
+                },
+                loadSetting() {
 					var opts = JSON.parse(localStorage.getItem("shiori-account")) || {},
 						ShowId = (typeof opts.config.ShowId === "boolean") ? opts.config.ShowId : false,
 						ListMode = (typeof opts.config.ListMode === "boolean") ? opts.config.ListMode : false,
@@ -66,27 +64,29 @@
 						UseArchive = (typeof opts.config.UseArchive === "boolean") ? opts.config.UseArchive : false;
 						CreateEbook = (typeof opts.config.CreateEbook === "boolean") ? opts.config.CreateEbook : false;
 
-					this.appOptions = {
+                    this.appOptions = {
 						ShowId: ShowId,
 						ListMode: ListMode,
 						NightMode: NightMode,
 						UseArchive: UseArchive,
 						CreateEbook: CreateEbook,
-					};
+                    };
 
 					document.body.className = NightMode ? "night" : "";
-				}
-			},
-			mounted() {
-				this.loadSetting();
+                }
+            },
+            mounted() {
+                this.loadSetting();
 
-				document.querySelectorAll("#content a").forEach(elem => {
-					elem.setAttribute("target", "_blank");
-					elem.setAttribute("rel", "noopener");
-				});
-			}
-		});
-	</script>
+                document.querySelectorAll("#content a").forEach(elem => {
+                    elem.setAttribute("target", "_blank");
+                    elem.setAttribute("rel", "noopener");
+                });
+            }
+        });
+
+        app.mount('#content-scene');
+    </script>
 </body>
 
 </html>

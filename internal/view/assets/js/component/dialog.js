@@ -1,4 +1,4 @@
-var template = `
+xiconst template = `
 <div v-if="visible" class="custom-dialog-overlay" @keyup.esc="handleEscPressed">
 	<div class="custom-dialog">
 		<p class="custom-dialog-header">{{title}}</p>
@@ -39,7 +39,7 @@ var template = `
 			</slot>
 		</div>
 		<div class="custom-dialog-footer">
-			<i v-if="loading" class="fas fa-fw fa-spinner fa-spin"></i>
+			<i v-if="loading" class="fa-solid fa-fw fa-spinner fa-spin"></i>
 			<slot v-else name="custom-footer">
 				<a v-if="secondText" 
 					:tabindex="btnTabIndex+1" 
@@ -59,183 +59,192 @@ var template = `
 </div>`;
 
 export default {
-	template: template,
-	props: {
-		title: String,
-		loading: Boolean,
-		visible: Boolean,
-		content: {
-			type: String,
-			default: ''
-		},
-		fields: {
-			type: Array,
-			default() {
-				return []
-			}
-		},
-		showLabel: {
-			type: Boolean,
-			default: false
-		},
-		mainText: {
-			type: String,
-			default: 'OK'
-		},
-		secondText: String,
-		mainClick: {
-			type: Function,
-			default() { this.visible = false; }
-		},
-		secondClick: {
-			type: Function,
-			default() { this.visible = false; }
-		},
-		escPressed: {
-			type: Function,
-			default() { this.visible = false; }
-		}
-	},
-	data() {
-		return {
-			formFields: []
-		};
-	},
-	computed: {
-		btnTabIndex() {
-			return this.fields.length + 1;
-		}
-	},
-	watch: {
-		fields: {
-			immediate: true,
-			handler() {
-				this.formFields = this.fields.map(field => {
-					if (typeof field === 'string') return {
-						name: field,
-						label: field,
-						value: '',
-						type: 'text',
-						dictionary: [],
-						separator: ' ',
-						suggestion: undefined
-					}
+    template: template,
+    props: {
+        title: String,
+        loading: Boolean,
+        visible: Boolean,
+        content: {
+            type: String,
+            default: ''
+        },
+        fields: {
+            type: Array,
+            default() {
+                return []
+            }
+        },
+        showLabel: {
+            type: Boolean,
+            default: false
+        },
+        mainText: {
+            type: String,
+            default: 'OK'
+        },
+        secondText: String,
+        mainClick: {
+            type: Function,
+            default() { this.visible = false; }
+        },
+        secondClick: {
+            type: Function,
+            default() { this.visible = false; }
+        },
+        escPressed: {
+            type: Function,
+            default() { this.visible = false; }
+        }
+    },
+    data() {
+        return {
+            formFields: []
+        }
+    },
+    computed: {
+        btnTabIndex() {
+            return this.fields.length + 1;
+        }
+    },
+    watch: {
+        fields: {
+            immediate: true,
+            handler() {
+                this.formFields = this.fields.map(field => {
+                    if (typeof field === 'string') {
+                        return {
+                            name: field,
+                            label: field,
+                            value: '',
+                            type: 'text',
+                            dictionary: [],
+                            separator: ' ',
+                            suggestion: undefined
+                        }
+                    }
+                    if (typeof field === 'object') {
+                        return {
+                            name: field.name || '',
+                            label: field.label || '',
+                            value: field.value || '',
+                            type: field.type || 'text',
+                            dictionary: field.dictionary instanceof Array ? field.dictionary : [],
+                            separator: field.separator || ' ',
+                            suggestion: undefined
+                        }
+                    }
+                });
+            }
+        },
+        'fields.length'() {
+            this.focus();
+        },
+        visible: {
+            immediate: true,
+            handler() {
+                this.focus();
+            }
+        }
+    },
+    methods: {
+        fieldType(f) {
+            const type = f.type || 'text';
+            if (type !== 'text' && type !== 'password') {
+                return 'text';
+            } else {
+                return type;
+            }
+        },
+        handleMainClick() {
+            var data = {};
+            this.formFields.forEach(field => {
+                var value = field.value;
+                if (field.type === 'number') {
+                    value = parseInt(value, 10) || 0;
+                } else if (field.type === 'float') {
+                    value = parseFloat(value) || 0.0;
+                } else if (field.type === 'check') {
+                    value = Boolean(value);
+                }
+                data[field.name] = value;
+            });
+            this.mainClick(data);
+        },
+        handleSecondClick() {
+            this.secondClick();
+        },
+        handleEscPressed() {
+            this.escPressed();
+        },
+        handleInput(index) {
+            // Create initial variables
+            const field = this.formFields[index],
+                dictionary = field.dictionary;
 
-					if (typeof field === 'object') return {
-						name: field.name || '',
-						label: field.label || '',
-						value: field.value || '',
-						type: field.type || 'text',
-						dictionary: field.dictionary instanceof Array ? field.dictionary : [],
-						separator: field.separator || ' ',
-						suggestion: undefined
-					}
-				});
-			}
-		},
-		'fields.length'() {
-			this.focus();
-		},
-		visible: {
-			immediate: true,
-			handler() { this.focus() }
-		}
-	},
-	methods: {
-		fieldType(f) {
-			var type = f.type || 'text';
-			if (type !== 'text' && type !== 'password') return 'text';
-			else return type;
-		},
-		handleMainClick() {
-			var data = {};
-			this.formFields.forEach(field => {
-				var value = field.value;
-				if (field.type === 'number') value = parseInt(value, 10) || 0;
-				else if (field.type === 'float') value = parseFloat(value) || 0.0;
-				else if (field.type === 'check') value = Boolean(value);
-				data[field.name] = value;
-			})
+            // Make sure dictionary is not empty
+            if (dictionary.length === 0) return;
 
-			this.mainClick(data);
-		},
-		handleSecondClick() {
-			this.secondClick();
-		},
-		handleEscPressed() {
-			this.escPressed();
-		},
-		handleInput(index) {
-			// Create initial variable
-			var field = this.formFields[index],
-				dictionary = field.dictionary;
+            // Fetch suggestion from dictionary
+            const words = field.value.split(field.separator),
+                lastWord = words[words.length - 1].toLowerCase();
+            var suggestion;
 
-			// Make sure dictionary is not empty
-			if (dictionary.length === 0) return;
+            if (lastWord.length > 0) {
+                suggestion = dictionary.find(word => word.toLowerCase().startsWith(lastWord));
+            }
 
-			// Fetch suggestion from dictionary
-			var words = field.value.split(field.separator),
-				lastWord = words[words.length - 1].toLowerCase(),
-				suggestion;
+            this.formFields[index].suggestion = suggestion;
 
-			if (lastWord !== '') {
-				suggestion = dictionary.find(word => {
-					return word.toLowerCase().startsWith(lastWord)
-				});
-			}
+            // Make sure suggestion exists
+            if (suggestion == null) return;
 
-			this.formFields[index].suggestion = suggestion;
-
-			// Make sure suggestion exist
-			if (suggestion == null) return;
-
-			// Display suggestion
-			this.$nextTick(() => {
-				var input = this.$refs.input[index],
+            // Display suggestion
+            this.$nextTick(() => {
+                const input = this.$refs.input[index],
 					suggestionNode = this.$refs['suggestion-' + index][0],
-					inputRect = input.getBoundingClientRect();
+                    inputRect = input.getBoundingClientRect();
 
 				suggestionNode.style.top = (inputRect.bottom - 1) + 'px';
 				suggestionNode.style.left = inputRect.left + 'px';
-			});
-		},
-		handleInputEnter(index) {
-			var suggestion = this.formFields[index].suggestion;
+            });
+        },
+        handleInputEnter(index) {
+            const suggestion = this.formFields[index].suggestion;
 
-			if (suggestion == null) {
-				this.handleMainClick();
-				return;
-			}
+            if (suggestion == null) {
+                this.handleMainClick();
+                return;
+            }
 
-			var separator = this.formFields[index].separator,
-				words = this.formFields[index].value.split(separator);
+            const separator = this.formFields[index].separator;
+            let words = this.formFields[index].value.split(separator);
 
-			words.pop();
-			words.push(suggestion);
+            words.pop();
+            words.push(suggestion);
 
-			this.formFields[index].value = words.join(separator) + separator;
-			this.formFields[index].suggestion = undefined;
+            this.formFields[index].value = words.join(separator) + separator;
+            this.formFields[index].suggestion = undefined;
 			// Focus input again after suggestion is accepted
 			this.$refs.input[index].focus();
-		},
-		focus() {
-			this.$nextTick(() => {
-				if (!this.visible) return;
+        },
+        focus() {
+            this.$nextTick(() => {
+                if (!this.visible) return;
 
-				var fields = this.$refs.input,
-					otherInput = this.$el.querySelectorAll('input'),
-					button = this.$refs.mainButton;
+                const fields = this.$refs.input,
+                    otherInput = this.$el.querySelectorAll('input'),
+                    button = this.$refs.mainButton;
 
-				if (fields && fields.length > 0) {
-					this.$refs.input[0].focus();
-					this.$refs.input[0].select();
-				} else if (otherInput && otherInput.length > 0) {
-					otherInput[0].focus();
-					otherInput[0].select();
-				} else if (button) {
-					button.focus();
-				}
-			})
-		}
-	}
+                if (fields && fields.length > 0) {
+                    fields[0].focus();
+                    fields[0].select();
+                } else if (otherInput && otherInput.length > 0) {
+                    otherInput[0].focus();
+                    otherInput[0].select();
+                } else if (button) {
+                    button.focus();
+                }
+            });
+        }
+    }
 }
